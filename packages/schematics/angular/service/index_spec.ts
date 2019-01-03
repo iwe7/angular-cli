@@ -18,7 +18,6 @@ describe('Service Schematic', () => {
   );
   const defaultOptions: ServiceOptions = {
     name: 'foo',
-    spec: true,
     flat: false,
     project: 'bar',
   };
@@ -34,8 +33,6 @@ describe('Service Schematic', () => {
     inlineStyle: false,
     inlineTemplate: false,
     routing: false,
-    style: 'css',
-    skipTests: false,
     skipPackageJson: false,
   };
   let appTree: UnitTestTree;
@@ -49,8 +46,8 @@ describe('Service Schematic', () => {
 
     const tree = schematicRunner.runSchematic('service', options, appTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/bar/src/app/foo/foo.service.spec.ts')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/bar/src/app/foo/foo.service.ts')).toBeGreaterThanOrEqual(0);
+    expect(files).toContain('/projects/bar/src/app/foo/foo.service.spec.ts');
+    expect(files).toContain('/projects/bar/src/app/foo/foo.service.ts');
   });
 
   it('service should be tree-shakeable', () => {
@@ -61,13 +58,13 @@ describe('Service Schematic', () => {
     expect(content).toMatch(/providedIn: 'root'/);
   });
 
-  it('should respect the spec flag', () => {
-    const options = { ...defaultOptions, spec: false };
+  it('should respect the skipTests flag', () => {
+    const options = { ...defaultOptions, skipTests: true };
 
     const tree = schematicRunner.runSchematic('service', options, appTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/bar/src/app/foo/foo.service.ts')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/bar/src/app/foo/foo.service.spec.ts')).toEqual(-1);
+    expect(files).toContain('/projects/bar/src/app/foo/foo.service.ts');
+    expect(files).not.toContain('/projects/bar/src/app/foo/foo.service.spec.ts');
   });
 
   it('should respect the sourceRoot value', () => {
@@ -75,7 +72,6 @@ describe('Service Schematic', () => {
     config.projects.bar.sourceRoot = 'projects/bar/custom';
     appTree.overwrite('/angular.json', JSON.stringify(config, null, 2));
     appTree = schematicRunner.runSchematic('service', defaultOptions, appTree);
-    expect(appTree.files.indexOf('/projects/bar/custom/app/foo/foo.service.ts'))
-      .toBeGreaterThanOrEqual(0);
+    expect(appTree.files).toContain('/projects/bar/custom/app/foo/foo.service.ts');
   });
 });

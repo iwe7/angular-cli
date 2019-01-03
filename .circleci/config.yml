@@ -12,8 +12,9 @@
 ## IMPORTANT
 # If you change the `docker_image` version, also change the `cache_key` suffix and the version of
 # `com_github_bazelbuild_buildtools` in the `/WORKSPACE` file.
-var_1: &docker_image angular/ngcontainer:0.3.3
-var_2: &cache_key angular_devkit-{{ checksum "yarn.lock" }}-0.3.3-2
+var_1: &docker_image angular/ngcontainer:0.7.0
+var_2: &cache_key angular_devkit-{{ checksum "yarn.lock" }}-0.7.0
+var_3: &node_8_docker_image angular/ngcontainer:0.3.3
 
 # Settings common to each job
 anchor_1: &defaults
@@ -48,7 +49,7 @@ jobs:
           <<: *root_package_lock_key
           paths:
             - ~/.cache/yarn
-  
+
   lint:
     <<: *defaults
     steps:
@@ -65,7 +66,7 @@ jobs:
     <<: *defaults
     steps:
       - attach_workspace: *attach_options
-      - run: npm run test -- --code-coverage --full
+      - run: npm run test -- --full
 
   test-large:
     <<: *defaults
@@ -74,7 +75,7 @@ jobs:
     steps:
       - attach_workspace: *attach_options
       - run: npm run webdriver-update-circleci
-      - run: npm run test-large -- --code-coverage --full --nb-shards=${CIRCLE_NODE_TOTAL} --shard=${CIRCLE_NODE_INDEX}
+      - run: npm run test-large -- --full --nb-shards=${CIRCLE_NODE_TOTAL} --shard=${CIRCLE_NODE_INDEX}
 
   e2e-cli:
     <<: *defaults
@@ -84,8 +85,34 @@ jobs:
     parallelism: 4
     steps:
       - attach_workspace: *attach_options
-      - run: npm install --global npm@6
       - run: xvfb-run -a node ./tests/legacy-cli/run_e2e --nb-shards=${CIRCLE_NODE_TOTAL} --shard=${CIRCLE_NODE_INDEX}
+      - store_artifacts:
+          path: /tmp/dist
+          destination: cli/new-production
+
+  e2e-node-8:
+    <<: *defaults
+    # Overwrite docker image to node 8.
+    docker:
+      - image: *node_8_docker_image
+    environment:
+      BASH_ENV: ~/.profile
+    resource_class: xlarge
+    parallelism: 2
+    steps:
+      - attach_workspace: *attach_options
+      - run: npm install --global npm@6
+      - run: xvfb-run -a node ./tests/legacy-cli/run_e2e --glob=tests/basic/* --nb-shards=${CIRCLE_NODE_TOTAL} --shard=${CIRCLE_NODE_INDEX}
+
+  e2e-cli-ng-snapshots:
+    <<: *defaults
+    environment:
+      BASH_ENV: ~/.profile
+    resource_class: xlarge
+    parallelism: 4
+    steps:
+      - attach_workspace: *attach_options
+      - run: xvfb-run -a node ./tests/legacy-cli/run_e2e --nb-shards=${CIRCLE_NODE_TOTAL} --shard=${CIRCLE_NODE_INDEX} --ng-snapshots
 
   build:
     <<: *defaults
@@ -95,11 +122,11 @@ jobs:
 
   build-bazel:
     <<: *defaults
-    resource_class: large
+    resource_class: xlarge
     steps:
       - attach_workspace: *attach_options
       - run: sudo cp .circleci/bazel.rc /etc/bazel.bazelrc
-      - run: bazel test //packages/...
+      - run: bazel test ...
 
   snapshot_publish:
     <<: *defaults
@@ -141,6 +168,10 @@ workflows:
       - build:
           requires:
             - install
+          filters:
+            branches:
+              ignore:
+              - /docs-preview/
       - build-bazel:
           requires:
             - build
@@ -153,6 +184,22 @@ workflows:
       - e2e-cli:
           requires:
             - build
+      - e2e-node-8:
+          requires:
+            - build
+      - snapshot_publish_docs:
+          requires:
+          - install
+          filters:
+            branches:
+              only:
+              - /docs-preview/
+      - e2e-cli-ng-snapshots:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
       - snapshot_publish:
           requires:
             - test
@@ -160,7 +207,8 @@ workflows:
             - e2e-cli
           filters:
             branches:
-              only: master
+              ignore:
+                - /pull\/.*/
       - publish:
           requires:
             - test

@@ -7,7 +7,9 @@
  */
 import {
   BaseException,
+  InvalidJsonCharacterException,
   JsonObject,
+  UnexpectedEndOfInputException,
   isObservable,
   normalize,
   virtualFs,
@@ -52,8 +54,18 @@ export class CollectionCannotBeResolvedException extends BaseException {
   }
 }
 export class InvalidCollectionJsonException extends BaseException {
-  constructor(_name: string, path: string) {
-    super(`Collection JSON at path ${JSON.stringify(path)} is invalid.`);
+  constructor(
+    _name: string,
+    path: string,
+    jsonException?: UnexpectedEndOfInputException | InvalidJsonCharacterException,
+  ) {
+    let msg = `Collection JSON at path ${JSON.stringify(path)} is invalid.`;
+
+    if (jsonException) {
+      msg = `${msg} ${jsonException.message}`;
+    }
+
+    super(msg);
   }
 }
 export class SchematicMissingFactoryException extends BaseException {
@@ -275,7 +287,8 @@ export abstract class FileSystemEngineHostBase implements
     options: OptionT,
     context?: FileSystemSchematicContext,
   ): Observable<ResultT> {
-    return (observableOf(options)
+    // tslint:disable-next-line:no-any https://github.com/ReactiveX/rxjs/issues/3989
+    return ((observableOf(options) as any)
       .pipe(
         ...this._transforms.map(tFn => mergeMap(opt => {
           const newOptions = tFn(schematic, opt, context);

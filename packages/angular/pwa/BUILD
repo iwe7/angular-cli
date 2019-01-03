@@ -6,6 +6,7 @@
 licenses(["notice"])  # MIT
 
 load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
+load("//tools:ts_json_schema.bzl", "ts_json_schema")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -24,11 +25,16 @@ ts_library(
             "**/*_spec_large.ts",
         ],
     ),
-    # Borrow the compile-time deps of the typescript compiler
-    # Just to avoid an extra npm install action.
-    node_modules = "@build_bazel_rules_typescript_tsc_wrapped_deps//:node_modules",
     deps = [
+        ":pwa_schema",
         "//packages/angular_devkit/core",
         "//packages/angular_devkit/schematics",
+        "@rxjs",
+        "@npm//@types/node",
     ],
+)
+
+ts_json_schema(
+    name = "pwa_schema",
+    src = "pwa/schema.json",
 )

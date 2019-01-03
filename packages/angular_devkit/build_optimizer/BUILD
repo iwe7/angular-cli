@@ -6,7 +6,7 @@
 licenses(["notice"])  # MIT
 
 load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
-load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test")
+load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test", "npm_package")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -23,7 +23,12 @@ ts_library(
             "src/**/*_benchmark.ts",
         ],
     ),
-    deps = [],
+    deps = [
+        "@npm//@types/node",
+        "@npm//@types/source-map",
+        "@npm//typescript",
+        "@npm//@types/webpack",
+    ],
 )
 
 ts_library(
@@ -37,12 +42,28 @@ ts_library(
     deps = [
         ":build_optimizer",
         "//packages/angular_devkit/core",
-        # @typings: jasmine
-        # @typings: node
+        "@npm//@types/node",
+        "@npm//@types/jasmine",
+        "@npm//@types/source-map",
     ],
+    testonly = True,
+    # @external_begin
+    tsconfig = "//:tsconfig-test.json",
+    # @external_end
 )
 
 jasmine_node_test(
     name = "build_optimizer_test",
     srcs = [":build_optimizer_test_lib"],
+    deps = [
+        "@npm//jasmine",
+        "@npm//source-map",
+    ]
+)
+
+npm_package(
+    name = "npm_package",
+    deps = [
+        ":build_optimizer",
+    ],
 )

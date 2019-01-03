@@ -5,7 +5,7 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
-load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test")
+load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test", "npm_package")
 
 licenses(["notice"])  # MIT License
 
@@ -24,15 +24,16 @@ ts_library(
     data = glob(["**/*.json"]),
     module_name = "@angular-devkit/core",
     module_root = "src/index.d.ts",
+    # strict_checks = False,
     deps = [
         "@rxjs",
         "@rxjs//operators",
+        "@npm//@types/node",
+        "@npm//@types/source-map",
+        "@npm//ajv",
         # @typings: es2015.core
         # @typings: es2015.symbol.wellknown
         # @typings: es2016.array.include
-        # @typings: ajv
-        # @typings: node
-        # @typings: source-map
     ],
 )
 
@@ -44,23 +45,33 @@ ts_library(
             "src/**/*_spec_large.ts",
         ],
     ),
+    # strict_checks = False,
     deps = [
         ":core",
         ":node",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: jasmine
-        # @typings: node
+        "@npm//@types/node",
+        "@npm//@types/jasmine",
     ],
     data = [
         "src/workspace/workspace-schema.json",
-        "src/workspace/test/test-workspace.json"    
+        "src/workspace/test/test-workspace.json"
     ],
+    testonly = True,
+    # @external_begin
+    tsconfig = "//:tsconfig-test.json",
+    # @external_end
 )
 
 jasmine_node_test(
     name = "core_test",
     srcs = [":core_test_lib"],
+    deps = [
+        "@npm//jasmine",
+        "@npm//source-map",
+        "@npm//chokidar",
+    ],
 )
 
 
@@ -83,7 +94,7 @@ ts_library(
         ":core",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: node
+        "@npm//@types/node",
     ],
 )
 
@@ -98,16 +109,28 @@ ts_library(
     deps = [
         ":core",
         ":node",
+        "//tests/angular_devkit/core/node/jobs:jobs_test_lib",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: jasmine
-        # @typings: node
+        "@npm//@types/node",
+        "@npm//@types/jasmine",
     ],
+    testonly = True,
+    # @external_begin
+    tsconfig = "//:tsconfig-test.json",
+    # @external_end
 )
 
 jasmine_node_test(
     name = "node_test",
     srcs = [":node_test_lib"],
+    deps = [
+        "@npm//jasmine",
+        "@npm//chokidar",
+        "@npm//source-map",
+        "@npm//temp",
+        "@npm//tslint",
+    ],
 )
 
 
@@ -125,11 +148,22 @@ ts_library(
     ),
     module_name = "@angular-devkit/core/node/testing",
     module_root = "node/testing/index.d.ts",
+    # strict_checks = False,
     deps = [
         ":core",
         ":node",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: node
+        "@npm//@types/node",
+        "@npm//@types/jasmine",
+    ],
+)
+
+npm_package(
+    name = "npm_package",
+    deps = [
+        ":core",
+        ":node",
+        ":node_testing",
     ],
 )

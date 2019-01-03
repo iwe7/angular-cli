@@ -64,13 +64,26 @@ describe('App Shell Schematic', () => {
     const filePath = '/angular.json';
     const content = tree.readContent(filePath);
     const workspace = JSON.parse(content);
-    const target = workspace.projects.bar.targets['app-shell'];
+    const target = workspace.projects.bar.architect['app-shell'];
     expect(target.options.browserTarget).toEqual('bar:build');
     expect(target.options.serverTarget).toEqual('bar:server');
     expect(target.options.route).toEqual('shell');
+    expect(target.configurations.production.browserTarget).toEqual('bar:build:production');
+    expect(target.configurations.production.serverTarget).toEqual('bar:server:production');
   });
 
   it('should add router module to client app module', () => {
+    const tree = schematicRunner.runSchematic('appShell', defaultOptions, appTree);
+    const filePath = '/projects/bar/src/app/app.module.ts';
+    const content = tree.readContent(filePath);
+    expect(content).toMatch(/import { RouterModule } from \'@angular\/router\';/);
+  });
+
+  it('should not fail when AppModule have imported RouterModule already', () => {
+    const updateRecorder = appTree.beginUpdate('/projects/bar/src/app/app.module.ts');
+    updateRecorder.insertLeft(0, 'import { RouterModule } from \'@angular/router\';');
+    appTree.commitUpdate(updateRecorder);
+
     const tree = schematicRunner.runSchematic('appShell', defaultOptions, appTree);
     const filePath = '/projects/bar/src/app/app.module.ts';
     const content = tree.readContent(filePath);

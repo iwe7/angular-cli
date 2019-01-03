@@ -7,6 +7,7 @@ licenses(["notice"])  # MIT
 
 load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
 load("@build_bazel_rules_nodejs//:defs.bzl", "jasmine_node_test")
+load("//tools:ts_json_schema.bzl", "ts_json_schema")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,13 +22,26 @@ ts_library(
         ],
     ),
     deps = [
+        ":migrate_schema",
+        ":update_schema",
         "//packages/angular_devkit/core",
         "//packages/angular_devkit/schematics",
         "//packages/angular_devkit/schematics:tasks",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: node
+        "@npm//@types/node",
+        "@npm//@types/semver",
     ],
+)
+
+ts_json_schema(
+    name = "update_schema",
+    src = "update/schema.json",
+)
+
+ts_json_schema(
+    name = "migrate_schema",
+    src = "migrate/schema.json",
 )
 
 ts_library(
@@ -50,12 +64,26 @@ ts_library(
         "//packages/angular_devkit/schematics:testing",
         "@rxjs",
         "@rxjs//operators",
-        # @typings: jasmine
-        # @typings: node
+        "@npm//@types/jasmine",
+        "@npm//@types/node",
+        "@npm//@types/semver",
+        "@npm//@yarnpkg/lockfile",
+        "@npm//ini",
+        "@npm//pacote",
     ],
+    testonly = True,
+    # @external_begin
+    tsconfig = "//:tsconfig-test.json",
+    # @external_end
 )
 
 jasmine_node_test(
     name = "update_test",
     srcs = [":update_test_lib"],
+    deps = [
+        "@npm//jasmine",
+        "@npm//source-map",
+        "@npm//chokidar",
+        "@npm//npm-registry-client",
+    ],
 )

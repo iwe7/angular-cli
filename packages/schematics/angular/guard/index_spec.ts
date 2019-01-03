@@ -18,7 +18,6 @@ describe('Guard Schematic', () => {
   );
   const defaultOptions: GuardOptions = {
     name: 'foo',
-    spec: true,
     flat: true,
     project: 'bar',
   };
@@ -33,7 +32,6 @@ describe('Guard Schematic', () => {
     inlineStyle: false,
     inlineTemplate: false,
     routing: false,
-    style: 'css',
     skipTests: false,
     skipPackageJson: false,
   };
@@ -46,17 +44,17 @@ describe('Guard Schematic', () => {
   it('should create a guard', () => {
     const tree = schematicRunner.runSchematic('guard', defaultOptions, appTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/bar/src/app/foo.guard.spec.ts')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/bar/src/app/foo.guard.ts')).toBeGreaterThanOrEqual(0);
+    expect(files).toContain('/projects/bar/src/app/foo.guard.spec.ts');
+    expect(files).toContain('/projects/bar/src/app/foo.guard.ts');
   });
 
-  it('should respect the spec flag', () => {
-    const options = { ...defaultOptions, spec: false };
+  it('should respect the skipTests flag', () => {
+    const options = { ...defaultOptions, skipTests: true };
 
     const tree = schematicRunner.runSchematic('guard', options, appTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/bar/src/app/foo.guard.spec.ts')).toEqual(-1);
-    expect(files.indexOf('/projects/bar/src/app/foo.guard.ts')).toBeGreaterThanOrEqual(0);
+    expect(files).not.toContain('/projects/bar/src/app/foo.guard.spec.ts');
+    expect(files).toContain('/projects/bar/src/app/foo.guard.ts');
   });
 
   it('should respect the sourceRoot value', () => {
@@ -64,7 +62,6 @@ describe('Guard Schematic', () => {
     config.projects.bar.sourceRoot = 'projects/bar/custom';
     appTree.overwrite('/angular.json', JSON.stringify(config, null, 2));
     appTree = schematicRunner.runSchematic('guard', defaultOptions, appTree);
-    expect(appTree.files.indexOf('/projects/bar/custom/app/foo.guard.ts'))
-      .toBeGreaterThanOrEqual(0);
+    expect(appTree.files).toContain('/projects/bar/custom/app/foo.guard.ts');
   });
 });

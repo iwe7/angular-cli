@@ -293,6 +293,20 @@ describe('Browser Builder styles', () => {
     ).toPromise().then(done, done.fail);
   }, 30000);
 
+  it(`supports font-awesome imports without extractCss`, (done) => {
+    host.writeMultipleFiles({
+      'src/styles.scss': `
+        @import "~font-awesome/css/font-awesome.css";
+      `,
+    });
+
+    const overrides = { extractCss: false, styles: [`src/styles.scss`] };
+
+    runTargetSpec(host, browserTargetSpec, overrides).pipe(
+      tap((buildEvent) => expect(buildEvent.success).toBe(true)),
+    ).toPromise().then(done, done.fail);
+  }, 30000);
+
   it(`uses autoprefixer`, (done) => {
     host.writeMultipleFiles({
       'src/styles.css': tags.stripIndents`
@@ -487,6 +501,27 @@ describe('Browser Builder styles', () => {
 
     runTargetSpec(host, browserTargetSpec, overrides).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
+    ).toPromise().then(done, done.fail);
+  });
+
+  it('supports Protocol-relative Url', (done) => {
+    host.writeMultipleFiles({
+      'src/styles.css': `
+        body {
+          background-image: url('//cdn.com/classic-bg.jpg');
+        }
+      `,
+    });
+
+    const overrides = { extractCss: true, optimization: true };
+    runTargetSpec(host, browserTargetSpec, overrides).pipe(
+      tap((buildEvent) => {
+        expect(buildEvent.success).toBe(true);
+
+        const filePath = './dist/styles.css';
+        const content = virtualFs.fileBufferToString(host.scopedSync().read(normalize(filePath)));
+        expect(content).toContain('background-image:url(//cdn.com/classic-bg.jpg)');
+      }),
     ).toPromise().then(done, done.fail);
   });
 });

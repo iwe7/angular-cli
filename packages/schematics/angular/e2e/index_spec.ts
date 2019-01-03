@@ -35,18 +35,20 @@ describe('Application Schematic', () => {
   it('should create all files of an e2e application', () => {
     const tree = schematicRunner.runSchematic('e2e', defaultOptions, workspaceTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/foo/protractor.conf.js')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/foo/tsconfig.e2e.json')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/foo/src/app.e2e-spec.ts')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/projects/foo/src/app.po.ts')).toBeGreaterThanOrEqual(0);
+    expect(files).toEqual(jasmine.arrayContaining([
+      '/projects/foo/protractor.conf.js',
+      '/projects/foo/tsconfig.e2e.json',
+      '/projects/foo/src/app.e2e-spec.ts',
+      '/projects/foo/src/app.po.ts',
+    ]));
   });
 
   it('should create all files of an e2e application', () => {
     const options = {...defaultOptions, projectRoot: 'e2e'};
     const tree = schematicRunner.runSchematic('e2e', options, workspaceTree);
     const files = tree.files;
-    expect(files.indexOf('/projects/foo/protractor.conf.js')).toEqual(-1);
-    expect(files.indexOf('/e2e/protractor.conf.js')).toBeGreaterThanOrEqual(0);
+    expect(files).not.toContain('/projects/foo/protractor.conf.js');
+    expect(files).toContain('/e2e/protractor.conf.js');
   });
 
   it('should set the rootSelector in the app.po.ts', () => {
@@ -79,14 +81,14 @@ describe('Application Schematic', () => {
     it('should set 2 targets for the app', () => {
       const tree = schematicRunner.runSchematic('e2e', defaultOptions, workspaceTree);
       const workspace = JSON.parse(tree.readContent('/angular.json'));
-      const targets = workspace.projects.foo.targets;
+      const targets = workspace.projects.foo.architect;
       expect(Object.keys(targets)).toEqual(['e2e', 'lint']);
     });
 
     it('should set the e2e options', () => {
       const tree = schematicRunner.runSchematic('e2e', defaultOptions, workspaceTree);
       const workspace = JSON.parse(tree.readContent('/angular.json'));
-      const e2eOptions = workspace.projects.foo.targets.e2e.options;
+      const e2eOptions = workspace.projects.foo.architect.e2e.options;
       expect(e2eOptions.protractorConfig).toEqual('projects/foo/protractor.conf.js');
       expect(e2eOptions.devServerTarget).toEqual('app:serve');
     });
@@ -94,7 +96,7 @@ describe('Application Schematic', () => {
     it('should set the lint options', () => {
       const tree = schematicRunner.runSchematic('e2e', defaultOptions, workspaceTree);
       const workspace = JSON.parse(tree.readContent('/angular.json'));
-      const lintOptions = workspace.projects.foo.targets.lint.options;
+      const lintOptions = workspace.projects.foo.architect.lint.options;
       expect(lintOptions.tsConfig).toEqual('projects/foo/tsconfig.e2e.json');
     });
   });

@@ -1,9 +1,14 @@
 <!-- Links in /docs/documentation should NOT have \`.md\` at the end, because they end up in our wiki at release. -->
+**Documentation below is for CLI version 6. For version 7 see [here](https://angular.io/cli/generate)**.
+
 
 # ng generate library
 
 ## Overview
-Generate a library project for Angular.
+`ng generate library [name]` generates a library project for Angular.
+
+## Alias
+lib - `ng generate lib [name]`
 
 ## Options
 <details>
